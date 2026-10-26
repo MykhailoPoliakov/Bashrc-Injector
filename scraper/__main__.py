@@ -1,10 +1,10 @@
-import requests
+import requests #type: ignore
 import time
 import json
 import os
  
-import openpyxl
-from openpyxl import Workbook
+import openpyxl #type: ignore
+from openpyxl import Workbook #type: ignore
  
 with open("config.json") as f:
     config = json.load(f)
@@ -38,11 +38,14 @@ def build_user_index(ws):
 def update_credential(ws, user_index, user, password, timestamp):
     if user in user_index:
         row = user_index[user]
-        ws.cell(row=row, column=2, value=password)
-        ws.cell(row=row, column=3, value=timestamp)
+        if password != ws.cell(row=row, column=2).value:
+            ws.cell(row=row, column=2, value=password)
+            ws.cell(row=row, column=3, value=timestamp)
+            print(f"User updated.")
     else:
         ws.append([user, password, timestamp])
         user_index[user] = ws.max_row
+        print(f"User added.")
  
  
 def parse_content(content):
@@ -81,7 +84,7 @@ def watch_log():
                 wb.save(EXCEL_FILE)
  
                 last_content = current_content
-                print(f"[{time.strftime('%H:%M:%S')}] Change saved ({len(pairs)} entries).")
+                print(f"[{time.strftime('%H:%M:%S')}] Data saved.")
  
         except requests.RequestException as e:
             print(f"Error fetching log: {e}")

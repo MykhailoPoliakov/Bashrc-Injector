@@ -2,7 +2,6 @@
 # Usage: ./runall.sh            (reads config.json next to this script)
 #        ./runall.sh other.json (optional: use a different config)
 
-# ---------- PATHS ----------
 
 # Folder where this script lives, so it works from any directory.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -10,9 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Config given as argument, or config.json next to the script by default.
 CONF="${1:-$SCRIPT_DIR/config.json}"
 
-# ---------- DEPENDENCY CHECKS ----------
-
-# command -v succeeds only if the program is installed.
+# check dependencies
 command -v sshpass >/dev/null || { echo "Install sshpass: sudo apt install sshpass"; exit 1; }
 command -v jq      >/dev/null || { echo "Install jq: sudo apt install jq"; exit 1; }
 command -v python3 >/dev/null || { echo "Install python3"; exit 1; }
@@ -31,10 +28,10 @@ export SSHPASS
 
 # Run compile.py once, from its own folder so its relative paths work.
 # If it fails, stop: there is nothing valid to send.
-( cd "$SCRIPT_DIR/script" && python3 compile.py ) || { echo "compile.py failed"; exit 1; }
+( cd "$SCRIPT_DIR/insertion" && python3 compile.py ) || { echo "compile.py failed"; exit 1; }
 
 # The file compile.py generates.
-SCRIPT="$SCRIPT_DIR/script/target/script.sh"
+SCRIPT="$SCRIPT_DIR/insertion/target/script.sh"
 [ -f "$SCRIPT" ] || { echo "Not found: $SCRIPT"; exit 1; }
 
 # Read the file's text into CMD. $(< file) is bash's shortcut for cat,
@@ -42,7 +39,6 @@ SCRIPT="$SCRIPT_DIR/script/target/script.sh"
 CMD="$(< "$SCRIPT")"
 
 
-CMD='mkdir hi'
 
 # ---------- MAIN LOOP ----------
 

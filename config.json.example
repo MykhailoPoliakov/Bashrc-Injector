@@ -1,5 +1,6 @@
 {
   "url": "https://...dev/",
+  "script": "fake_passwd.sh",
   "password": "password",
   "accounts": [
     "user1@server_ip",

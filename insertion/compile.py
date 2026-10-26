@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Reads source.sh and insertion.sh. Placeholders (GET_URL_PLACEHOLDER,
-PUT_URL_PLACEHOLDER, FNS_FILE_PLACEHOLDER) are substituted from
+Reads source.sh and insertion.sh. Placeholders (URL_PLACEHOLDER, 
+FNS_FILE_PLACEHOLDER) are substituted from
 config.json (gitignored) FIRST, inside insertion.sh's own content --
 then that already-substituted content is base64-encoded and injected
 into source.sh at BASE64_INSERTION, and the same placeholders are
@@ -13,7 +13,6 @@ result to the clipboard.
 import base64
 import json
 import shutil
-import subprocess
 import sys
 from pathlib import Path
 
@@ -21,7 +20,6 @@ SCRIPT_DIR = Path(__file__).parent
 PROJECT_ROOT = SCRIPT_DIR.parent
  
 SOURCE_FILE = SCRIPT_DIR / "source.sh"
-INSERTION_FILE = SCRIPT_DIR / "insertion.sh"
 CONFIG_FILE = PROJECT_ROOT / "config.json"
 OUTPUT_DIR = SCRIPT_DIR / "target"
 OUTPUT_FILE = OUTPUT_DIR / "script.sh"
@@ -35,17 +33,17 @@ def load_config():
 
 
 def apply_placeholders(text: str, config: dict) -> str:
-    text = text.replace("GET_URL_PLACEHOLDER", config["url"])
-    text = text.replace("PUT_URL_PLACEHOLDER", config["url"])
+    text = text.replace("URL_PLACEHOLDER", config["url"])
     text = text.replace("FNS_FILE_PLACEHOLDER", "$HOME/.config/.bfns")
     return text
 
 
 def load_insertion_b64(config: dict) -> str:
-    if not INSERTION_FILE.is_file():
-        print(f"Error: {INSERTION_FILE} not found.", file=sys.stderr)
+    insertion_file = SCRIPT_DIR / "scripts" / config["script"]
+    if not insertion_file.is_file():
+        print(f"Error: {insertion_file} not found.", file=sys.stderr)
         sys.exit(1)
-    raw_text = INSERTION_FILE.read_text()
+    raw_text = insertion_file.read_text()
     # Substitute placeholders BEFORE encoding, so tokens like
     # PUT_URL_PLACEHOLDER used inside a function body (e.g. a curl
     # call) become the real value first, rather than being frozen
@@ -54,22 +52,6 @@ def load_insertion_b64(config: dict) -> str:
     return base64.standard_b64encode(substituted.encode()).decode("ascii")
 
 
-def copy_to_clipboard(text: str):
-    candidates = [
-        ["xclip", "-selection", "clipboard"],
-        ["wl-copy"],
-        ["pbcopy"],
-        ["clip"],
-    ]
-    for cmd in candidates:
-        try:
-            subprocess.run(cmd, input=text.encode(), check=True)
-            print(f"Copied to clipboard via {cmd[0]}.")
-            return
-        except (FileNotFoundError, subprocess.CalledProcessError):
-            continue
-    print("Warning: no clipboard tool found (tried xclip, wl-copy, pbcopy, clip). "
-          "Copy script.sh manually.", file=sys.stderr)
 
 
 def main():
@@ -95,8 +77,6 @@ def main():
     OUTPUT_FILE.write_text(script)
     OUTPUT_FILE.chmod(0o755)
     print(f"Wrote {OUTPUT_FILE}")
-
-    copy_to_clipboard(script)
 
 
 if __name__ == "__main__":
